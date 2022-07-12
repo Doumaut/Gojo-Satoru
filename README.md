@@ -1,142 +1,179 @@
-<p align="center">
-<img src="https://telegra.ph/file/f3b2f9e862e1352d4fd94.jpg" alt="nz" width="350"/>
-</p>
+# node-imagemagick
 
-## Gojo-Satoru
+[Imagemagick](http://www.imagemagick.org/) module for [Node](http://nodejs.org/).
 
-> <a href="https://youtu.be/W-QCp2fWRTo"><img src="https://img.shields.io/badge/Tutorial-Video-ff0000?style=for-the-badge&logo=youtube&logoColor=ff000000&link=https://www.youtube.com/c/BOTINDO" /><br>
+You can install this module using [npm](http://github.com/isaacs/npm):
 
-> [Automated Multi Device whatsapp bot created](https://github.com/nexusNw/Gojo-Satoru) by [nexusNw](github.com/nexusNw)
+    npm install imagemagick
 
-> Dont forget to give a star bro.🥲 IF Heroku Deploy seems Error, Fork This Repo And Try Deploy Again
+Requires imagemagick CLI tools to be installed. There are numerous ways to install them. For instance, if you're on OS X you can use [Homebrew](http://mxcl.github.com/homebrew/): `brew install imagemagick`.
 
-> If The Api Of This Bot Run Empty You Can Change it To Your Own Api By Changing [Here](https://github.com/nexusNw/Gojo-Satoru/blob/master/settings.js#L18) And Register [here](https://zenzapis.xyz/) to get apikey
+## Example
 
-
-</br>
-
-<a href="https://github.com/nexusNw"><img title="Author" src="https://img.shields.io/badge/Author-nexusNw-blue.svg?color=54aeff&style=for-the-badge&logo=github" /></a>  
-<a href="https://github.com/nexusNw/Gojo-Satoru"><img title="Stars" src="https://img.shields.io/github/stars/nexusNw/Gojo-Satoru?color=54aeff&style=flat-square" /></a>
-<a href="https://github.com/nexusNw/Gojo-Satoru/network/members"><img title="Forks" src="https://img.shields.io/github/forks/nexusNw/Gojo-Satoru?color=54aeff&style=flat-square" /></a>
-<a href="https://github.com/nexusNw/Gojo-Satoru/watchers"><img title="Watching" src="https://img.shields.io/github/watchers/nexusNw/Gojo-Satoru?label=watchers&color=54aeff&style=flat-square" /></a> <br>
-
----
-
-<!-- Requirements -->
-<b><details><summary>Requirements</summary></b>
-* Some Text Editor
-* [Node JS](https://nodejs.org/en/)
-* [Git](https://git-scm.com/downloads)
-* [FFMPEG](https://ffmpeg.org/download.html)
-  
-```bash
-Add FFmpeg to PATH environment variable
+```javascript
+var im = require('imagemagick');
+im.readMetadata('kittens.jpg', function(err, metadata){
+  if (err) throw err;
+  console.log('Shot at '+metadata.exif.dateTimeOriginal);
+})
+// -> Shot at Tue, 06 Feb 2007 21:13:54 GMT
 ```
-</details>
 
+## API
 
-<!-- Start via Heroku -->
-<b><details><summary>Start via Heroku</summary></b>
+### convert.path
 
-* Scan QR In Your Whatsapp From [Here](https://replit.com/@nexusNw/M-D-SCANNER-V2?v=1?outputonly=1&lite=1#index.js)
-* Fork This Repo By Clicking [Here](https://github.com/nexusNw/Gojo-Satoru/fork)
-* then Deploy The Bot From [Here](https://heroku.com/deploy)
-* Wait 5-10 Min To Deploy 
-* After Deploying On The Worker And Check The Logs
+Path to the `convert` program. Defaults to `"convert"`.
 
-</details>
+### identify.path
 
+Path to the `identify` program. Defaults to `"identify"`.
 
+### identify(path, callback(err, features))
 
-<!-- Installation via Termux -->
-<b><details><summary>Installation on Termux</summary></b>
-```bash
-> apt update
-> apt upgrade
-> pkg update && pkg upgrade
-> pkg install bash
-> pkg install libwebp
-> pkg install git -y
-> pkg install nodejs -y 
-> pkg install ffmpeg -y 
-> pkg install wget
-> pkg install imagemagick -y
-> git clone https://github.com/nexusNw/Gojo-Satoru
-> cd Gojo-Satoru
-> npm install
+Identify file at `path` and return an object `features`.
+
+Example:
+
+```javascript
+im.identify('kittens.jpg', function(err, features){
+  if (err) throw err;
+  console.log(features);
+  // { format: 'JPEG', width: 3904, height: 2622, depth: 8 }
+});
 ```
-</details>
 
-<!-- Edit -->
-<b><details><summary>Edit settings.js</summary></b>
-```bash
-global.APIKeys = {
-	'https://zenzapis.xyz': 'YOURAPIKEY',
+### identify(args, callback(err, output))
+
+Custom identification where `args` is an array of arguments. The result is returned as a raw string to `output`.
+
+Example:
+
+```javascript
+im.identify(['-format', '%wx%h', 'kittens.jpg'], function(err, output){
+  if (err) throw err;
+  console.log('dimension: '+output);
+  // dimension: 3904x2622
+});
+```
+
+### readMetadata(path, callback(err, metadata))
+
+Read metadata (i.e. exif) in `path` and return an object `metadata`. Modelled on top of `identify`.
+
+Example:
+
+```javascript
+im.readMetadata('kittens.jpg', function(err, metadata){
+  if (err) throw err;
+  console.log('Shot at '+metadata.exif.dateTimeOriginal);
+  // -> Shot at Tue, 06 Feb 2007 21:13:54 GMT
+});
+```
+
+### convert(args, callback(err, stdout, stderr))
+
+Raw interface to `convert` passing arguments in the array `args`.
+
+Example:
+
+```javascript
+im.convert(['kittens.jpg', '-resize', '25x120', 'kittens-small.jpg'], 
+function(err, stdout){
+  if (err) throw err;
+  console.log('stdout:', stdout);
+});
+```
+
+### resize(options, callback(err, stdout, stderr))
+
+Convenience function for resizing an image, modelled on top of `convert`.
+
+The `options` argument have the following default values:
+
+```javascript
+{
+  srcPath: undefined,
+  srcData: null,
+  srcFormat: null,
+  dstPath: undefined,
+  quality: 0.8,
+  format: 'jpg',
+  progressive: false,
+  width: 0,
+  height: 0,
+  strip: true,
+  filter: 'Lagrange',
+  sharpening: 0.2,
+  customArgs: []
 }
-  
-global.owner = ["9181XXXXXX"]
-global.ownername = ["YourName"]
-```
-</details>
-
-
-<!-- 24hrs-->
-<b><details><summary>For 24 Hours Activation</summary></b>
-
-```bash
-npm i -g pm2 && pm2 start index.js && pm2 save && pm2 logs
 ```
 
-</details>
+srcPath, dstPath and (at least one of) width and height are required. The rest is optional.
 
-----
+Example:
 
+```javascript
+im.resize({
+  srcPath: 'kittens.jpg',
+  dstPath: 'kittens-small.jpg',
+  width:   256
+}, function(err, stdout, stderr){
+  if (err) throw err;
+  console.log('resized kittens.jpg to fit within 256x256px');
+});
+```
 
-<b><details><summary>Available Features</summary><br>
-	
-| Features |  Availability |
-| :------: |  :----------: |
-|   Convert     |       ✅     |
-|   Database     |       ✅     |
-|   Owner     |       ✅    |
-|   Islami     |       ✅     |
-|   Downloader     |       ✅     |
-|   Webzone     |       ✅[      |
-|   Searching     |       ✅      |
-|   Textpro     |       ✅      |
-|   Ephoto     |       ✅     |
-|   Anime Web     |       ✅      |
-|   Stalker     |       ✅      |
-|   Random Text     |       ✅     |
-|   Random Image     |       ✅     |
-|   Nekos Life     |       ✅      |
-|   More Nsfw     |       ✅      |
-|   Creator     |       ✅      |
+Example with stdin/stdout:
 
-</details>
+```javascript
+var fs = require('fs');
+im.resize({
+  srcData: fs.readFileSync('kittens.jpg', 'binary'),
+  width:   256
+}, function(err, stdout, stderr){
+  if (err) throw err
+  fs.writeFileSync('kittens-resized.jpg', stdout, 'binary');
+  console.log('resized kittens.jpg to fit within 256x256px')
+});
+```
 
+### crop(options, callback) ###
+Convenience function for resizing and cropping an image. _crop_ uses the resize method, so _options_ and _callback_ are the same. _crop_ uses _options.srcPath_, so make sure you set it :) Using only _options.width_ or _options.height_ will create a square dimensioned image.  Gravity can also be specified, it defaults to Center.   Available gravity options are [NorthWest, North, NorthEast, West, Center, East, SouthWest, South, SouthEast]
 
-----
+Example:
 
-<!-- Contact Owner -->
-<b><details><summary>Contact</summary></b>
+```javascript
+im.crop({
+  srcPath: path,
+  dstPath: 'cropped.jpg',
+  width: 800,
+  height: 600,
+  quality: 1,
+  gravity: "North"
+}, function(err, stdout, stderr){
+  // foo
+});
+```
 
-## ```Connect With Me```
-<p align="center">
-<a href="https://wa.me/918129624000"><img src="https://img.shields.io/badge/Contact Nexus-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" />
-<a href="https://youtube.com/channel/UCqoUjPvDdb0kjXNYdvPPpHQ"><img src="https://img.shields.io/badge/Subscribe Nexus-ff0000?style=for-the-badge&logo=youtube&logoColor=ff000000&link=https://www.youtube.com/c/BOTINDO" /><br>
-</p>
+## License (MIT)
 
-</details>
+Copyright (c) 2010-2012 Rasmus Andersson <http://hunch.se/>
 
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-</details><hr>
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
 
-## Thanks To
-* [`@adiwajshing/baileys`](https://github.com/adiwajshing/baileys)
-* [`Alien-Alfa`](https://github.com/Alien-Alfa)
-* [`DGXeon`](https://github.com/DGXeon)
-* [`AflahXrd`](https://github.com/nexusNw)
-
-
-License: [MIT](https://github.com/Gojo-Satoru/LICENSE)
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
